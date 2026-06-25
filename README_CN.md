@@ -11,6 +11,7 @@ MiniFitLog 是一個自託管的運動、飲食、BMR 與熱量赤字追蹤 Web 
 - [安全性](#安全性)
 - [背景](#背景)
 - [功能](#功能)
+- [設計色票](#設計色票)
 - [安裝](#安裝)
 - [使用方式](#使用方式)
 - [API](#api)
@@ -44,6 +45,22 @@ Docker 部署時，應用資料會持久保存在 `training-data` volume。
 - 熱量攝取與赤字統計。
 - Server 啟動時自動執行 SQLite migration。
 - Docker Compose 部署。
+
+## 設計色票
+
+MiniFitLog 使用清爽的健身儀表板配色。之後新增或調整 UI 時，請沿用這組 token：
+
+| Token | 色碼 | 用途 |
+| --- | --- | --- |
+| Primary Green | `#22C55E` | 主要操作、成功狀態、目前選取的導覽。 |
+| Secondary Blue | `#0EA5E9` | 次要操作、focus 狀態、運動相關強調色。 |
+| Background | `#F8FAFC` | App 背景。 |
+| Card White | `#FFFFFF` | 卡片、面板、對話框、表單底色。 |
+| Main Text | `#0F172A` | 標題與主要文字。 |
+| Muted Text | `#64748B` | 標籤、輔助文字、metadata。 |
+| Border | `#E2E8F0` | 分隔線、表單邊框、卡片邊框。 |
+| Warning Orange | `#F97316` | 熱量警示與注意狀態。 |
+| Danger Red | `#EF4444` | 刪除操作與錯誤狀態。 |
 
 ## 安裝
 

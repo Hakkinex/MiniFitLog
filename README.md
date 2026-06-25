@@ -11,6 +11,7 @@ Each user signs up with an email and password. Training, food, BMR, and settings
 - [Security](#security)
 - [Background](#background)
 - [Features](#features)
+- [Design Palette](#design-palette)
 - [Install](#install)
 - [Usage](#usage)
 - [API](#api)
@@ -44,6 +45,22 @@ The Docker setup persists application data in the `training-data` volume.
 - Calorie intake and deficit summaries.
 - SQLite migrations run automatically at server startup.
 - Docker Compose deployment.
+
+## Design Palette
+
+MiniFitLog uses a light fitness dashboard palette. Use these tokens for future UI work:
+
+| Token | Color | Usage |
+| --- | --- | --- |
+| Primary Green | `#22C55E` | Primary actions, success states, active navigation. |
+| Secondary Blue | `#0EA5E9` | Secondary actions, focus states, workout accents. |
+| Background | `#F8FAFC` | App background. |
+| Card White | `#FFFFFF` | Cards, panels, dialogs, form surfaces. |
+| Main Text | `#0F172A` | Headings and primary text. |
+| Muted Text | `#64748B` | Labels, secondary text, metadata. |
+| Border | `#E2E8F0` | Dividers, form borders, card borders. |
+| Warning Orange | `#F97316` | Calorie warnings and caution states. |
+| Danger Red | `#EF4444` | Delete actions and errors. |
 
 ## Install
 
