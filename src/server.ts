@@ -39,6 +39,22 @@ async function main() {
       }
       return reply.type('text/html').send('<h1>Login</h1>')
     })
+    fastify.get('/assets/:file', async (request, reply) => {
+      const { file } = request.params as { file: string }
+      if (!/^[\w.-]+$/.test(file)) {
+        return reply.status(400).send({ error: 'Invalid asset path' })
+      }
+
+      const assetFile = path.resolve(publicDir, 'assets', file)
+      const assetDir = path.resolve(publicDir, 'assets')
+      if (!assetFile.startsWith(assetDir) || !fs.existsSync(assetFile)) {
+        return reply.status(404).send({ error: 'Asset not found' })
+      }
+
+      const ext = path.extname(assetFile).toLowerCase()
+      const type = ext === '.png' ? 'image/png' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'application/octet-stream'
+      return reply.type(type).send(fs.readFileSync(assetFile))
+    })
   }
 
   try {

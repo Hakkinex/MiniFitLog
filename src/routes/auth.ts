@@ -16,7 +16,7 @@ function setAuthCookie(reply: FastifyReply, token: string) {
 
 export async function authMiddleware(fastify: FastifyInstance, service: AuthService) {
   fastify.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
-    if (request.url === '/login' || request.url.startsWith('/api/auth')) {
+    if (request.url === '/login' || request.url.startsWith('/api/auth') || request.url.startsWith('/assets/')) {
       return
     }
 

@@ -20,8 +20,12 @@
   --shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--background); display: flex; align-items: center; justify-content: center; min-height: 100vh; color: var(--main-text); }
-.login-box { background: var(--card); padding: 32px; border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); width: min(360px, calc(100vw - 32px)); }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #FFFFFF; min-height: 100vh; color: var(--main-text); }
+.login-stage { min-height: 100vh; width: min(860px, calc(100vw - 32px)); margin: 0 auto; padding: 24px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.login-hero { width: 100%; display: flex; align-items: flex-start; justify-content: center; }
+.login-hero img { width: min(820px, 100%); max-height: 420px; object-fit: contain; object-position: top center; }
+.login-panel { width: 100%; display: flex; justify-content: center; margin-top: -22px; position: relative; z-index: 1; }
+.login-box { background: rgba(255,255,255,.98); padding: 32px; border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); width: min(420px, calc(100vw - 48px)); }
 .login-box h1 { font-size: 20px; margin-bottom: 8px; color: var(--main-text); }
 .login-box h1::first-letter { color: var(--primary-green); }
 .login-box p { font-size: 13px; line-height: 1.5; color: var(--muted-text); margin-bottom: 20px; }
@@ -34,19 +38,33 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; b
 .mode-switch { margin-top: 16px; background: transparent !important; color: var(--secondary-blue-dark) !important; border: 1px solid var(--secondary-blue) !important; }
 .mode-switch:hover { background: #E0F2FE !important; }
 .error { color: var(--danger-red); font-size: 13px; margin-top: 10px; display: none; }
+@media (max-width: 860px) {
+  body { background: #FFFFFF; }
+  .login-stage { width: min(520px, calc(100vw - 24px)); padding: 16px 0; }
+  .login-hero img { width: min(560px, 120vw); max-height: 42vh; }
+  .login-panel { margin-top: -10px; }
+  .login-box { width: 100%; }
+}
 </style>
 </head>
 <body>
-<div class="login-box">
-  <h1>MiniFitLog</h1>
-  <p id="modeHelp">請先註冊使用者，之後即可使用 email 與密碼登入。</p>
-  <label for="email">Email</label>
-  <input type="email" id="email" autocomplete="email" placeholder="you@example.com" autofocus>
-  <label for="password">密碼</label>
-  <input type="password" id="password" autocomplete="current-password" placeholder="至少 8 個字元">
-  <button id="submitBtn">註冊並登入</button>
-  <button class="mode-switch" id="modeSwitch" type="button">已有帳號，改用登入</button>
-  <div class="error" id="errorMsg"></div>
+<div class="login-stage">
+  <div class="login-hero" aria-hidden="true">
+    <img src="/assets/login-lee-da-hye.png" alt="">
+  </div>
+  <div class="login-panel">
+    <div class="login-box">
+      <h1>MiniFitLog</h1>
+      <p id="modeHelp">請先註冊使用者，之後即可使用 email 與密碼登入。</p>
+      <label for="email">Email</label>
+      <input type="email" id="email" autocomplete="email" placeholder="you@example.com" autofocus>
+      <label for="password">密碼</label>
+      <input type="password" id="password" autocomplete="current-password" placeholder="至少 8 個字元">
+      <button id="submitBtn">註冊並登入</button>
+      <button class="mode-switch" id="modeSwitch" type="button">已有帳號，改用登入</button>
+      <div class="error" id="errorMsg"></div>
+    </div>
+  </div>
 </div>
 <script>
 let mode = 'register';
