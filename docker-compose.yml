@@ -1,0 +1,14 @@
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+    volumes:
+      - training-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  training-data:

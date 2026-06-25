@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiniFitLog</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f5; color: #333; font-size: 16pt; }
+
+.layout { display: flex; min-height: 100vh; }
+
+.sidebar { width: 260px; background: #2c3e50; color: white; padding: 16px; flex-shrink: 0; overflow-y: auto; }
+.sidebar h2 { font-size: 14pt; margin-bottom: 10px; color: #ccc; }
+.sidebar .year-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.sidebar .year-nav button { background: #3d5266; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 12pt; }
+.sidebar .year-nav button:hover { background: #5a7a9a; }
+.sidebar .year-nav .year-label { font-size: 16pt; font-weight: 700; }
+.sidebar .month-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.sidebar .month-btn { background: #3d5266; color: #ccc; border: none; padding: 10px 4px; border-radius: 4px; cursor: pointer; font-size: 12pt; text-align: center; }
+.sidebar .month-btn:hover { background: #5a7a9a; color: white; }
+.sidebar .month-btn.active { background: #4a9; color: white; font-weight: 700; }
+.sidebar .logout-btn { margin-top: 20px; width: 100%; background: transparent; border: 1px solid #5a7a9a; color: #aaa; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 11pt; }
+.sidebar .logout-btn:hover { background: #5a7a9a; color: white; }
+
+.sidebar .bmr-settings { margin-top: 16px; border-top: 1px solid #3d5266; padding-top: 12px; }
+.sidebar .bmr-settings h2 { font-size: 13pt; color: #ccc; margin-bottom: 8px; }
+.sidebar .bmr-settings .bmr-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; font-size: 11pt; color: #aaa; }
+.sidebar .bmr-settings .bmr-val { flex: 1; background: #3d5266; color: white; padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 12pt; }
+.sidebar .bmr-settings .bmr-edit-btn { background: #5a7a9a; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10pt; }
+.sidebar .bmr-settings .bmr-edit-btn:hover { background: #7a8a9a; }
+.sidebar .bmr-settings .deficit-start-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 10pt; color: #aaa; }
+.sidebar .bmr-settings .deficit-start-row input { width: 110px; padding: 3px 6px; border: 1px solid #5a7a9a; border-radius: 4px; background: #3d5266; color: white; font-size: 10pt; }
+
+.sidebar .food-mgmt { margin-top: 16px; border-top: 1px solid #3d5266; padding-top: 12px; }
+.sidebar .food-mgmt h2 { font-size: 13pt; color: #ccc; margin-bottom: 8px; }
+.sidebar .food-mgmt .add-food-btn { width: 100%; background: #4a9; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 11pt; margin-bottom: 8px; }
+.sidebar .food-mgmt .add-food-btn:hover { background: #3a8; }
+.sidebar .food-mgmt .food-list { max-height: 300px; overflow-y: auto; font-size: 10pt; }
+.sidebar .food-mgmt .food-group { margin-bottom: 6px; }
+.sidebar .food-mgmt .food-group-header { color: #8ab; font-weight: 700; font-size: 10pt; margin-bottom: 2px; }
+.sidebar .food-mgmt .food-item { display: flex; justify-content: space-between; padding: 2px 4px; color: #aaa; }
+.sidebar .food-mgmt .food-item:hover { color: white; background: #3d5266; }
+.sidebar .food-mgmt .food-item .fi-del { color: #c66; cursor: pointer; margin-left: 4px; }
+
+.main { flex: 1; padding: 16px; overflow-y: auto; }
+
+.tabs { display: flex; gap: 0; margin-bottom: 10px; }
+.tab-btn { flex: 1; padding: 10px; border: none; background: #5a6a7a; color: #bbb; font-size: 14pt; font-weight: 600; cursor: pointer; border-radius: 6px 6px 0 0; }
+.tab-btn:hover { background: #6a7a8a; color: #ddd; }
+.tab-btn.active { background: #333f4f; color: white; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.header { background: #333f4f; color: white; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between; border-radius: 0 6px 0 0; margin-bottom: 10px; }
+.header .nav { display: flex; align-items: center; gap: 10px; }
+.header .nav button { background: #5a6a7a; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 14pt; }
+.header .nav button:hover { background: #7a8a9a; }
+.header .nav .month-label { font-size: 18pt; font-weight: 600; min-width: 200px; text-align: center; }
+
+.stats-bar { background: #fff3cd; padding: 10px 16px; border-radius: 6px; display: flex; gap: 30px; font-size: 14pt; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 10px; flex-wrap: wrap; }
+
+.calendar { }
+.week-block { background: white; border-radius: 6px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+.week-header { background: #eaeeef; padding: 6px 12px; font-size: 12pt; color: #555; display: flex; justify-content: space-between; align-items: center; }
+.week-header .week-label { font-weight: 600; font-size: 13pt; }
+.week-header .week-metrics { display: flex; gap: 12px; font-size: 11pt; align-items: center; flex-wrap: wrap; }
+.week-header .week-metrics label { display: flex; align-items: center; gap: 4px; }
+.week-header .week-metrics input { width: 70px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 11pt; }
+
+.week-header .bmr-fields { display: flex; gap: 10px; font-size: 11pt; align-items: center; flex-wrap: wrap; }
+.week-header .bmr-fields label { display: flex; align-items: center; gap: 4px; }
+.week-header .bmr-fields input { width: 80px; padding: 3px 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 11pt; }
+.week-header .bmr-fields .bmr-edit-btn { background: #5a7a9a; color: white; border: none; padding: 2px 8px; border-radius: 3px; cursor: pointer; font-size: 9pt; }
+.week-header .bmr-fields .bmr-edit-btn:hover { background: #7a8a9a; }
+.week-header .deficit-val { font-weight: 700; }
+.week-header .deficit-val.positive { color: #4a9; }
+.week-header .deficit-val.negative { color: #c44; }
+
+.day-names-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0; background: #333f4f; border-radius: 6px 6px 0 0; overflow: hidden; margin-bottom: 1px; }
+.day-names-row .dn { text-align: center; color: white; font-size: 10pt; padding: 4px 0; font-weight: 600; }
+
+.week-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e0e0e0; }
+
+.day-cell { background: white; font-size: 11pt; }
+.day-cell.empty { background: #fafafa; }
+.day-cell .day-header { background: #d0dae8; padding: 6px 8px; display: flex; justify-content: space-between; align-items: baseline; border-bottom: 2px solid #a0b0c8; }
+.day-cell .day-num { font-weight: 700; font-size: 16pt; color: #333f4f; }
+.day-cell .day-name { font-size: 10pt; color: #5a6a8a; font-weight: 600; }
+.day-cell .day-body { padding: 6px 6px; min-height: 100px; }
+
+.day-cell .row { margin-bottom: 5px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.day-cell .row label { font-size: 10pt; color: #888; min-width: 30px; }
+.day-cell select, .day-cell input { font-size: 10pt; padding: 3px 4px; border: 1px solid #ddd; border-radius: 3px; }
+.day-cell select { width: 46px; }
+.day-cell .type-select { width: 100px; }
+.day-cell input[type="number"] { width: 52px; }
+.day-cell .note-input { width: 100%; margin-top: 2px; font-size: 10pt; }
+.day-cell .custom-input { width: 70px; }
+.day-cell .cardio-label { color: #00a; font-size: 10pt; font-weight: 600; }
+.day-cell .plank-label { color: #0a0; font-size: 10pt; font-weight: 600; }
+
+.day-cell.sunday .day-header { background: #f0d0d0; border-bottom-color: #d0a0a0; }
+.day-cell.saturday .day-header { background: #d0e8f0; border-bottom-color: #a0c8d0; }
+
+.meal-section { margin-bottom: 4px; }
+.meal-label { font-weight: 700; font-size: 10pt; color: #538; margin-bottom: 2px; }
+.meal-items { font-size: 9pt; margin-bottom: 2px; }
+.meal-item-row { display: flex; justify-content: space-between; align-items: center; padding: 1px 0; }
+.meal-item-row .mi-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meal-item-row .mi-cal { color: #666; min-width: 36px; text-align: right; }
+.meal-item-row .mi-del { color: #c44; cursor: pointer; margin-left: 2px; font-size: 9pt; }
+.meal-total { font-weight: 700; font-size: 10pt; border-top: 1px solid #ddd; padding-top: 1px; }
+.add-food-btn { background: #538; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 9pt; margin-top: 2px; }
+.add-food-btn:hover { background: #427; }
+
+.food-dropdown { position: absolute; background: white; border: 1px solid #ccc; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 100; max-height: 300px; overflow-y: auto; width: 260px; font-size: 10pt; }
+.food-dropdown .fd-search { width: 100%; padding: 6px 8px; border: none; border-bottom: 1px solid #eee; font-size: 10pt; }
+.food-dropdown .fd-group { padding: 2px 0; }
+.food-dropdown .fd-group-header { padding: 3px 8px; background: #f0f0f0; font-weight: 700; color: #555; font-size: 9pt; }
+.food-dropdown .fd-item { padding: 4px 8px; cursor: pointer; display: flex; justify-content: space-between; }
+.food-dropdown .fd-item:hover { background: #e0e8f0; }
+.food-dropdown .fd-item .fd-name { flex: 1; }
+.food-dropdown .fd-item .fd-cal { color: #888; margin-left: 8px; }
+.food-dropdown .fd-custom { padding: 6px 8px; border-top: 1px solid #eee; }
+.food-dropdown .fd-custom input { width: 100%; padding: 3px 4px; border: 1px solid #ddd; border-radius: 3px; font-size: 9pt; margin-bottom: 3px; }
+.food-dropdown .fd-custom button { background: #4a9; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 9pt; }
+
+.day-total { font-weight: 700; font-size: 10pt; background: #f8f0d0; padding: 2px 4px; border-radius: 3px; text-align: center; margin-top: 4px; }
+
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; display: flex; align-items: center; justify-content: center; }
+.modal { background: white; padding: 20px; border-radius: 8px; width: 400px; max-width: 90vw; }
+.modal h3 { font-size: 14pt; margin-bottom: 12px; }
+.modal label { display: block; font-size: 11pt; margin-bottom: 4px; color: #555; }
+.modal input, .modal select { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 12pt; margin-bottom: 10px; }
+.modal .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.modal .modal-btns button { padding: 6px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 12pt; }
+.modal .btn-save { background: #4a9; color: white; }
+.modal .btn-cancel { background: #999; color: white; }
+
+.saving-indicator { position: fixed; top: 10px; right: 10px; background: #4a9; color: white; padding: 6px 14px; border-radius: 4px; font-size: 12pt; display: none; z-index: 999; }
+
+@media (max-width: 900px) {
+  .layout { flex-direction: column; }
+  .sidebar { width: 100%; min-height: auto; }
+  .sidebar .month-grid { grid-template-columns: repeat(6, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<div class="saving-indicator" id="saving">儲存中...</div>
+
+<div class="layout">
+  <div class="sidebar" id="sidebar">
+    <h2>選擇月份</h2>
+    <div class="year-nav">
+      <button id="prevYear">&lt;</button>
+      <span class="year-label" id="yearLabel"></span>
+      <button id="nextYear">&gt;</button>
+    </div>
+    <div class="month-grid" id="monthGrid"></div>
+    <div class="bmr-settings" id="bmrSettings">
+      <h2>基礎代謝率</h2>
+      <div class="bmr-row">
+        <span class="bmr-val" id="bmrDefaultVal">10283</span>
+        <button class="bmr-edit-btn" id="bmrEditBtn">修改</button>
+      </div>
+      <div class="deficit-start-row">
+        <label>赤字計算起始日</label>
+        <input type="date" id="deficitStartDate">
+      </div>
+    </div>
+    <div class="food-mgmt" id="foodMgmt">
+      <h2>食物管理</h2>
+      <button class="add-food-btn" id="addFoodBtn">+ 新增食物</button>
+      <div class="food-list" id="foodList"></div>
+    </div>
+    <button class="logout-btn" id="logoutBtn">登出</button>
+  </div>
+
+  <div class="main">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="training">運動追蹤</button>
+      <button class="tab-btn" data-tab="food">飲食追蹤</button>
+    </div>
+    <div class="header">
+      <div class="nav">
+        <button id="prevMonth">&lt;</button>
+        <span class="month-label" id="monthLabel"></span>
+        <button id="nextMonth">&gt;</button>
+      </div>
+    </div>
+
+    <div id="trainingTab" class="tab-content active">
+      <div class="stats-bar">
+        <span>有氧達成率: <span id="cardioRate">-</span></span>
+        <span>棒式/捲腹達成率: <span id="plankRate">-</span></span>
+      </div>
+      <div class="calendar" id="trainingCalendar"></div>
+    </div>
+
+    <div id="foodTab" class="tab-content">
+      <div class="stats-bar" id="foodStatsBar">
+        <span>月度累積赤字: <span id="cumulativeDeficit">-</span></span>
+      </div>
+      <div class="calendar" id="foodCalendar"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modalOverlay" class="modal-overlay" style="display:none;"></div>
+<div id="foodDropdown" class="food-dropdown" style="display:none;"></div>
+
+<script>
+const EXERCISE_TYPES = ['超慢跑(30mins)','爆裂飛輪','踏步機(30mins)','Tabata 15 mins','爬樓梯(40mins)','渣打半馬','腳踏車','其他'];
+const PLANK_TYPES = ['棒式*5(30秒)','捲腹(10次)','深蹲(10次)','提臀(10次)','弓箭步(10次)','上胸(10次)','Workout*2','其他'];
+const MONTH_NAMES = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const DAY_NAMES = ['日','一','二','三','四','五','六'];
+const DAY_FULL_NAMES = ['週日','週一','週二','週三','週四','週五','週六'];
+const MEAL_NAMES = { breakfast: '早', lunch: '中', dinner: '晚' };
+const MEAL_ORDER = ['breakfast','lunch','dinner'];
+
+let currentYear, currentMonth, sidebarYear;
+let trainingData = null;
+let foodData = null;
+let allFoods = [];
+let saveTimers = {};
+let activeTab = 'training';
+let bmrDefault = 10283;
+let deficitStartDate = '';
+
+function init() {
+  const now = new Date();
+  currentYear = now.getFullYear();
+  currentMonth = now.getMonth() + 1;
+  sidebarYear = currentYear;
+
+  document.getElementById('prevMonth').onclick = () => { changeMonth(-1); };
+  document.getElementById('nextMonth').onclick = () => { changeMonth(1); };
+  document.getElementById('prevYear').onclick = () => { sidebarYear--; renderSidebar(); };
+  document.getElementById('nextYear').onclick = () => { sidebarYear++; renderSidebar(); };
+  document.getElementById('logoutBtn').onclick = logout;
+  document.getElementById('addFoodBtn').onclick = showAddFoodModal;
+  document.getElementById('bmrEditBtn').onclick = showBmrEditModal;
+  document.getElementById('deficitStartDate').onchange = saveDeficitStartDate;
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      activeTab = btn.dataset.tab;
+      document.getElementById(btn.dataset.tab + 'Tab').classList.add('active');
+    };
+  });
+
+  renderSidebar();
+  loadAllFoods();
+  loadSettings();
+  loadMonth();
+}
+
+function renderSidebar() {
+  document.getElementById('yearLabel').textContent = `${sidebarYear}`;
+  const grid = document.getElementById('monthGrid');
+  grid.innerHTML = '';
+  for (let m = 1; m <= 12; m++) {
+    const btn = document.createElement('button');
+    btn.className = 'month-btn';
+    if (sidebarYear === currentYear && m === currentMonth) btn.classList.add('active');
+    btn.textContent = MONTH_NAMES[m - 1];
+    btn.onclick = () => {
+      currentYear = sidebarYear;
+      currentMonth = m;
+      renderSidebar();
+      loadMonth();
+    };
+    grid.appendChild(btn);
+  }
+}
+
+function changeMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth > 12) { currentMonth = 1; currentYear++; }
+  if (currentMonth < 1) { currentMonth = 12; currentYear--; }
+  sidebarYear = currentYear;
+  renderSidebar();
+  loadMonth();
+}
+
+async function loadAllFoods() {
+  try {
+    const res = await fetch('/api/foods');
+    if (res.ok) allFoods = await res.json();
+  } catch(e) { allFoods = []; }
+  renderFoodList();
+}
+
+async function loadSettings() {
+  try {
+    const res = await fetch('/api/settings');
+    if (res.ok) {
+      const settings = await res.json();
+      settings.forEach(function(s) {
+        if (s.key === 'bmr_default' && s.value) {
+          bmrDefault = parseFloat(s.value);
+          document.getElementById('bmrDefaultVal').textContent = bmrDefault;
+        }
+        if (s.key === 'deficit_start_date' && s.value) {
+          deficitStartDate = s.value;
+        }
+      });
+    }
+  } catch(e) {}
+  if (!deficitStartDate) {
+    deficitStartDate = currentYear + '-01-01';
+  }
+  document.getElementById('deficitStartDate').value = deficitStartDate;
+}
+
+function renderFoodList() {
+  const list = document.getElementById('foodList');
+  list.innerHTML = '';
+  const groups = {};
+  allFoods.forEach(f => {
+    if (!groups[f.source]) groups[f.source] = [];
+    groups[f.source].push(f);
+  });
+  for (const [src, items] of Object.entries(groups)) {
+    const g = document.createElement('div');
+    g.className = 'food-group';
+    g.innerHTML = `<div class="food-group-header">${src}</div>`;
+    items.forEach(f => {
+      const row = document.createElement('div');
+      row.className = 'food-item';
+      row.innerHTML = `<span>${f.name} (${f.calories})</span><span class="fi-del" data-fid="${f.id}">&times;</span>`;
+      g.appendChild(row);
+    });
+    list.appendChild(g);
+  }
+  list.querySelectorAll('.fi-del').forEach(el => {
+    el.onclick = async () => {
+      await fetch(`/api/foods/${el.dataset.fid}`, { method: 'DELETE' });
+      await loadAllFoods();
+      loadMonth();
+    };
+  });
+}
+
+async function loadMonth() {
+  document.getElementById('monthLabel').textContent = `${currentYear} 年 ${currentMonth} 月`;
+  try {
+    const res1 = await fetch(`/api/months/${currentYear}/${currentMonth}`);
+    trainingData = res1.ok ? await res1.json() : { weeklyMetrics: [], dailyRecords: [], stats: { cardioRate: 0, plankRate: 0, cardioDone: 0, cardioTotal: 0, plankDone: 0, plankTotal: 0 } };
+  } catch(e) {
+    trainingData = { weeklyMetrics: [], dailyRecords: [], stats: { cardioRate: 0, plankRate: 0, cardioDone: 0, cardioTotal: 0, plankDone: 0, plankTotal: 0 } };
+  }
+  try {
+    const res2 = await fetch(`/api/food/months/${currentYear}/${currentMonth}`);
+    foodData = res2.ok ? await res2.json() : { daily: [], bmrRecords: [], foodItems: [] };
+  } catch(e) {
+    foodData = { daily: [], bmrRecords: [], foodItems: [] };
+  }
+  renderTrainingStats();
+  renderTrainingCalendar();
+  renderFoodStats();
+  renderFoodCalendar();
+}
+
+function getDaysInMonth(y, m) { return new Date(y, m, 0).getDate(); }
+function getFirstDayOfWeek(y, m) { return new Date(y, m - 1, 1).getDay(); }
+
+function getWeekNumber(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const startOfYear = new Date(d.getFullYear(), 0, 1);
+  const dayOfYear = Math.floor((d.getTime() - startOfYear.getTime()) / 86400000) + 1;
+  const jan1Day = startOfYear.getDay();
+  const firstSunday = jan1Day === 0 ? 1 : 8 - jan1Day;
+  if (dayOfYear < firstSunday) return 1;
+  return Math.ceil((dayOfYear - firstSunday + 1) / 7) + 1;
+}
+
+function formatDate(y, m, d) {
+  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function debounceSave(key, fn, ms) {
+  if (saveTimers[key]) clearTimeout(saveTimers[key]);
+  saveTimers[key] = setTimeout(fn, ms);
+}
+
+function showSaving() { document.getElementById('saving').style.display = 'block'; }
+function hideSaving() { setTimeout(() => { document.getElementById('saving').style.display = 'none'; }, 600); }
+
+// ===================== TRAINING TAB =====================
+
+function renderTrainingStats() {
+  const s = trainingData.stats;
+  document.getElementById('cardioRate').textContent = s.cardioTotal > 0 ? (s.cardioRate * 100).toFixed(1) + '%' : '-';
+  document.getElementById('plankRate').textContent = s.plankTotal > 0 ? (s.plankRate * 100).toFixed(1) + '%' : '-';
+}
+
+function renderTrainingCalendar() {
+  const cal = document.getElementById('trainingCalendar');
+  cal.innerHTML = '';
+  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+  const firstDay = getFirstDayOfWeek(currentYear, currentMonth);
+  const recordsMap = {};
+  (trainingData.dailyRecords || []).forEach(r => { recordsMap[r.date] = r; });
+  const metricsMap = {};
+  (trainingData.weeklyMetrics || []).forEach(m => { metricsMap[m.date] = m; });
+
+  appendDayNamesRow(cal);
+  let dayNum = 1;
+  while (dayNum <= daysInMonth) {
+    const { week, nextDay } = buildWeekBlock(dayNum, daysInMonth, firstDay, recordsMap, metricsMap, 'training');
+    cal.appendChild(week);
+    dayNum = nextDay;
+  }
+  attachTrainingListeners();
+}
+
+function appendDayNamesRow(container) {
+  const row = document.createElement('div');
+  row.className = 'day-names-row';
+  for (let i = 0; i < 7; i++) {
+    const dn = document.createElement('div');
+    dn.className = 'dn';
+    dn.textContent = DAY_FULL_NAMES[i];
+    row.appendChild(dn);
+  }
+  container.appendChild(row);
+}
+
+function buildWeekBlock(dayNum, daysInMonth, firstDay, recordsMap, metricsMap, mode) {
+  const week = document.createElement('div');
+  week.className = 'week-block';
+  const weekStartDay = dayNum;
+  const weekStartDate = formatDate(currentYear, currentMonth, weekStartDay);
+  const weekNum = getWeekNumber(weekStartDate);
+  const satDate = getSaturdayDate(weekStartDate, daysInMonth);
+
+  const header = document.createElement('div');
+  header.className = 'week-header';
+
+  const weekLabel = document.createElement('span');
+  weekLabel.className = 'week-label';
+  weekLabel.textContent = `W${weekNum}`;
+
+  if (mode === 'training') {
+    const metricsDiv = document.createElement('span');
+    metricsDiv.className = 'week-metrics';
+    const wm = metricsMap[satDate] || null;
+    metricsDiv.innerHTML = buildWeeklyInputsHTML(satDate, wm);
+    header.appendChild(weekLabel);
+    header.appendChild(metricsDiv);
+  } else {
+    const bmrDiv = document.createElement('span');
+    bmrDiv.className = 'bmr-fields';
+    const bmrRec = (foodData.bmrRecords || []).find(b => b.date === satDate);
+    const bmrVal = bmrRec ? bmrRec.bmr : bmrDefault;
+    let weekIntake = 0;
+    for (let d = 0; d < 7 && (weekStartDay + d) <= daysInMonth; d++) {
+      const dd = formatDate(currentYear, currentMonth, weekStartDay + d);
+      const fd = (foodData.daily || []).find(x => x.date === dd);
+      if (fd) weekIntake += fd.totalCal;
+    }
+    const deficit = (bmrVal - weekIntake).toFixed(1);
+    const defClass = parseFloat(deficit) >= 0 ? 'positive' : 'negative';
+    bmrDiv.innerHTML = `<label>基礎代謝率<input type="number" value="${bmrVal}" data-bmr-date="${satDate}" data-bmr-field="bmr"></label>` +
+      `<span>攝取: ${weekIntake.toFixed(0)}</span>` +
+      `<span>赤字: <span class="deficit-val ${defClass}">${deficit}</span></span>` +
+      `<button class="bmr-edit-btn" data-bmr-cascade="${satDate}" style="font-size:9pt;padding:2px 6px;">往後套用</button>`;
+    header.appendChild(weekLabel);
+    header.appendChild(bmrDiv);
+  }
+
+  week.appendChild(header);
+  const days = document.createElement('div');
+  days.className = 'week-days';
+  const startOffset = (dayNum === 1) ? firstDay : 0;
+  let nextDay = dayNum;
+
+  for (let d = 0; d < 7; d++) {
+    if (d < startOffset || nextDay > daysInMonth) {
+      const empty = document.createElement('div');
+      empty.className = 'day-cell empty';
+      days.appendChild(empty);
+      continue;
+    }
+    const date = formatDate(currentYear, currentMonth, nextDay);
+    const dow = new Date(date + 'T00:00:00').getDay();
+    const cell = document.createElement('div');
+    cell.className = 'day-cell';
+    if (dow === 0) cell.classList.add('sunday');
+    if (dow === 6) cell.classList.add('saturday');
+
+    if (mode === 'training') {
+      const rec = recordsMap[date] || {};
+      cell.innerHTML = buildTrainingDayHTML(nextDay, date, dow, rec);
+    } else {
+      const fd = (foodData.daily || []).find(x => x.date === date);
+      cell.innerHTML = buildFoodDayHTML(nextDay, date, dow, fd);
+    }
+    days.appendChild(cell);
+    nextDay++;
+  }
+  week.appendChild(days);
+  return { week, nextDay };
+}
+
+function getSaturdayDate(weekStartDate, daysInMonth) {
+  const parts = weekStartDate.split('-');
+  const y = parseInt(parts[0]), m = parseInt(parts[1]), d = parseInt(parts[2]);
+  const satDay = d + 6;
+  return satDay <= daysInMonth ? formatDate(y, m, satDay) : formatDate(y, m, daysInMonth);
+}
+
+function buildWeeklyInputsHTML(date, wm) {
+  const bf = wm ? (wm.body_fat || '') : '';
+  const wt = wm ? (wm.weight || '') : '';
+  const ws = wm ? (wm.waist || '') : '';
+  return `<label>體脂肪%<input type="number" step="0.1" value="${bf}" data-wm-date="${date}" data-wm-field="body_fat"></label>` +
+    `<label>體重kg<input type="number" step="0.1" value="${wt}" data-wm-date="${date}" data-wm-field="weight"></label>` +
+    `<label>腰圍cm<input type="number" step="0.1" value="${ws}" data-wm-date="${date}" data-wm-field="waist"></label>`;
+}
+
+function buildTrainingDayHTML(dayNum, date, dow, rec) {
+  const cd = rec.cardio_done === 1 ? 'Y' : (rec.cardio_done === 0 && rec.note ? 'N' : '');
+  const pd = rec.plank_done === 1 ? 'Y' : (rec.plank_done === 0 && rec.note ? 'N' : '');
+  const et = rec.exercise_type || '';
+  const pt = rec.plank_type || '';
+  const ch = rec.cardio_heartbeat || '';
+  const ph = rec.plank_heartbeat || '';
+  const note = rec.note || '';
+  const ec = rec.exercise_custom || '';
+  const pc = rec.plank_custom || '';
+
+  let html = `<div class="day-header"><span class="day-num">${dayNum}</span><span class="day-name">${DAY_NAMES[dow]}</span></div><div class="day-body">`;
+  html += `<div class="row"><span class="cardio-label">有氧</span>`;
+  html += `<select data-date="${date}" data-field="cardio_done"><option value=""></option><option value="1" ${cd==='Y'?'selected':''}>Y</option><option value="0" ${cd==='N'?'selected':''}>N</option></select>`;
+  html += `<select class="type-select" data-date="${date}" data-field="exercise_type">${buildOptions(EXERCISE_TYPES, et)}</select>`;
+  if (et === '其他') html += `<input class="custom-input" data-date="${date}" data-field="exercise_custom" value="${ec}" placeholder="自訂">`;
+  html += `</div>`;
+  html += `<div class="row"><label>心跳</label><input type="number" data-date="${date}" data-field="cardio_heartbeat" value="${ch}" min="0" max="300"></div>`;
+  html += `<div class="row"><span class="plank-label">捲腹</span>`;
+  html += `<select data-date="${date}" data-field="plank_done"><option value=""></option><option value="1" ${pd==='Y'?'selected':''}>Y</option><option value="0" ${pd==='N'?'selected':''}>N</option></select>`;
+  html += `<select class="type-select" data-date="${date}" data-field="plank_type">${buildOptions(PLANK_TYPES, pt)}</select>`;
+  if (pt === '其他') html += `<input class="custom-input" data-date="${date}" data-field="plank_custom" value="${pc}" placeholder="自訂">`;
+  html += `</div>`;
+  html += `<div class="row"><label>心跳</label><input type="number" data-date="${date}" data-field="plank_heartbeat" value="${ph}" min="0" max="300"></div>`;
+  html += `<input class="note-input" data-date="${date}" data-field="note" value="${note}" placeholder="備註">`;
+  html += `</div>`;
+  return html;
+}
+
+function buildOptions(types, selected) {
+  let opts = '<option value=""></option>';
+  types.forEach(t => { opts += `<option value="${t}" ${t===selected?'selected':''}>${t}</option>`; });
+  return opts;
+}
+
+function attachTrainingListeners() {
+  document.querySelectorAll('[data-wm-date][data-wm-field]').forEach(el => {
+    const evts = el.tagName === 'SELECT' ? ['change'] : ['change', 'input'];
+    evts.forEach(evt => {
+      el.addEventListener(evt, () => {
+        const date = el.dataset.wmDate;
+        debounceSave('wm-' + date, () => saveWeeklyMetrics(date), 500);
+      });
+    });
+  });
+  document.querySelectorAll('[data-date][data-field]').forEach(el => {
+    const evts = el.tagName === 'SELECT' ? ['change'] : ['change', 'input'];
+    evts.forEach(evt => {
+      el.addEventListener(evt, () => {
+        const date = el.dataset.date;
+        debounceSave('daily-' + date, () => saveDailyRecord(date), 500);
+      });
+    });
+  });
+}
+
+async function saveWeeklyMetrics(date) {
+  const fields = document.querySelectorAll(`[data-wm-date="${date}"]`);
+  const body = { date };
+  fields.forEach(f => { const val = f.value; body[f.dataset.wmField] = val === '' ? null : parseFloat(val); });
+  showSaving();
+  await fetch(`/api/weekly/${date}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  hideSaving();
+}
+
+async function saveDailyRecord(date) {
+  const fields = document.querySelectorAll(`[data-date="${date}"][data-field]`);
+  const body = { date, cardio_done: 0, plank_done: 0 };
+  fields.forEach(f => {
+    const field = f.dataset.field;
+    let val = f.value;
+    if (field === 'cardio_done' || field === 'plank_done') body[field] = val === '' ? 0 : parseInt(val);
+    else if (field === 'cardio_heartbeat' || field === 'plank_heartbeat') body[field] = val === '' ? null : parseInt(val);
+    else body[field] = val || null;
+  });
+  showSaving();
+  await fetch(`/api/daily/${date}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  hideSaving();
+}
+
+// ===================== FOOD TAB =====================
+
+function renderFoodStats() {
+  var cumDefEl = document.getElementById('cumulativeDeficit');
+  cumDefEl.textContent = '計算中...';
+  cumDefEl.className = '';
+  calculateCumulativeDeficit().then(function(result) {
+    cumDefEl.textContent = result.deficit.toFixed(1) + ' kcal';
+    cumDefEl.className = result.deficit >= 0 ? 'positive' : 'negative';
+  });
+}
+
+async function calculateCumulativeDeficit() {
+  var startDate = deficitStartDate || (currentYear + '-01-01');
+  var totalBmr = 0;
+  var totalIntake = 0;
+  var startParts = startDate.split('-');
+  var startYear = parseInt(startParts[0]);
+  var startMonth = parseInt(startParts[1]);
+  var endYear = currentYear;
+  var endMonth = currentMonth;
+  var y = startYear;
+  var m = startMonth;
+  while (y < endYear || (y === endYear && m <= endMonth)) {
+    try {
+      var res = await fetch('/api/food/months/' + y + '/' + m);
+      if (res.ok) {
+        var data = await res.json();
+        var bmrRecs = data.bmrRecords || [];
+        bmrRecs.forEach(function(b) { totalBmr += (b.bmr || 0); });
+        var daily = data.daily || [];
+        daily.forEach(function(d) { totalIntake += (d.totalCal || 0); });
+      }
+    } catch(e) {}
+    m++;
+    if (m > 12) { m = 1; y++; }
+  }
+  return { deficit: totalBmr - totalIntake, totalBmr: totalBmr, totalIntake: totalIntake };
+}
+
+function renderFoodCalendar() {
+  const cal = document.getElementById('foodCalendar');
+  cal.innerHTML = '';
+  const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+  const firstDay = getFirstDayOfWeek(currentYear, currentMonth);
+  const metricsMap = {};
+
+  appendDayNamesRow(cal);
+  let dayNum = 1;
+  while (dayNum <= daysInMonth) {
+    const { week, nextDay } = buildWeekBlock(dayNum, daysInMonth, firstDay, {}, metricsMap, 'food');
+    cal.appendChild(week);
+    dayNum = nextDay;
+  }
+  attachFoodListeners();
+  attachBmrListeners();
+}
+
+function buildFoodDayHTML(dayNum, date, dow, fd) {
+  const meals = fd ? (fd.meals || { breakfast: [], lunch: [], dinner: [] }) : { breakfast: [], lunch: [], dinner: [] };
+  const bc = fd ? (fd.breakfastCal || 0) : 0;
+  const lc = fd ? (fd.lunchCal || 0) : 0;
+  const dc = fd ? (fd.dinnerCal || 0) : 0;
+  const total = fd ? (fd.totalCal || 0) : 0;
+
+  let html = `<div class="day-header"><span class="day-num">${dayNum}</span><span class="day-name">${DAY_NAMES[dow]}</span></div><div class="day-body">`;
+
+  for (const mt of MEAL_ORDER) {
+    const items = meals[mt] || [];
+    html += `<div class="meal-section">`;
+    html += `<div class="meal-label">${MEAL_NAMES[mt]}</div>`;
+    html += `<div class="meal-items" data-meal-date="${date}" data-meal-type="${mt}">`;
+    items.forEach(function(item, idx) {
+      const name = (item.food && item.food.name) || item.custom_name || '?';
+      const cal = (item.food && item.food.calories) || item.custom_calories || 0;
+      html += `<div class="meal-item-row"><span class="mi-name">${name}</span><span class="mi-cal">${cal}</span><span class="mi-del" data-mi-date="${date}" data-mi-meal="${mt}" data-mi-idx="${idx}">&times;</span></div>`;
+    });
+    html += `</div>`;
+    const mealCal = mt === 'breakfast' ? bc : mt === 'lunch' ? lc : dc;
+    html += `<div class="meal-total">${mealCal} kcal</div>`;
+    html += `<button class="add-food-btn" data-af-date="${date}" data-af-meal="${mt}">+食物</button>`;
+    html += `</div>`;
+  }
+
+  html += `<div class="day-total">合計: ${total} kcal</div>`;
+  html += `</div>`;
+  return html;
+}
+
+function attachFoodListeners() {
+  document.querySelectorAll('.add-food-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      showFoodDropdown(btn, btn.dataset.afDate, btn.dataset.afMeal);
+    };
+  });
+  document.querySelectorAll('.mi-del').forEach(el => {
+    el.onclick = async () => {
+      const date = el.dataset.miDate;
+      const meal = el.dataset.miMeal;
+      const idx = parseInt(el.dataset.miIdx);
+      await removeMealItem(date, meal, idx);
+    };
+  });
+}
+
+function attachBmrListeners() {
+  document.querySelectorAll('[data-bmr-date][data-bmr-field]').forEach(function(el) {
+    var evts = ['change', 'input'];
+    evts.forEach(function(evt) {
+      el.addEventListener(evt, function() {
+        var date = el.dataset.bmrDate;
+        debounceSave('bmr-' + date, function() { saveBmr(date); }, 500);
+      });
+    });
+  });
+  document.querySelectorAll('[data-bmr-cascade]').forEach(function(btn) {
+    btn.onclick = async function() {
+      var date = btn.dataset.bmrCascade;
+      var input = document.querySelector('[data-bmr-date="' + date + '"][data-bmr-field="bmr"]');
+      var val = input ? parseFloat(input.value) : bmrDefault;
+      if (!val) return;
+      showSaving();
+      await fetch('/api/food/bmr-cascade/' + date, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bmr: val })
+      });
+      hideSaving();
+      loadMonth();
+    };
+  });
+}
+
+async function saveBmr(date) {
+  const el = document.querySelector('[data-bmr-date="' + date + '"][data-bmr-field="bmr"]');
+  const val = el ? el.value : '';
+  if (!val) return;
+  showSaving();
+  await fetch(`/api/food/bmr/${date}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bmr: parseFloat(val) }) });
+  hideSaving();
+  loadMonth();
+}
+
+function showFoodDropdown(btn, date, meal) {
+  const dd = document.getElementById('foodDropdown');
+  const rect = btn.getBoundingClientRect();
+  dd.style.left = rect.left + 'px';
+  dd.style.top = (rect.bottom + 4) + 'px';
+  dd.style.display = 'block';
+
+  let html = `<input class="fd-search" placeholder="搜尋食物..." autofocus>`;
+  const groups = {};
+  allFoods.forEach(function(f) { if (!groups[f.source]) groups[f.source] = []; groups[f.source].push(f); });
+  for (const [src, items] of Object.entries(groups)) {
+    html += `<div class="fd-group"><div class="fd-group-header">${src}</div>`;
+    items.forEach(f => {
+      html += `<div class="fd-item" data-fi-id="${f.id}" data-fi-cal="${f.calories}"><span class="fd-name">${f.name}</span><span class="fd-cal">${f.calories} kcal</span></div>`;
+    });
+    html += `</div>`;
+  }
+  html += `<div class="fd-custom"><input placeholder="自訂: 來源" id="fdCustomSrc"><input placeholder="自訂: 名稱" id="fdCustomName"><input placeholder="自訂: 熱量" id="fdCustomCal" type="number"><button id="fdCustomSave">新增並加入</button></div>`;
+
+  dd.innerHTML = html;
+
+  dd.querySelectorAll('.fd-item').forEach(item => {
+    item.onclick = async () => {
+      const foodId = parseInt(item.dataset.fiId);
+      await addMealItem(date, meal, { food_item_id: foodId });
+      dd.style.display = 'none';
+    };
+  });
+
+  dd.querySelector('#fdCustomSave').onclick = async () => {
+    const src = dd.querySelector('#fdCustomSrc').value.trim();
+    const name = dd.querySelector('#fdCustomName').value.trim();
+    const cal = parseFloat(dd.querySelector('#fdCustomCal').value);
+    if (!name || !cal) return;
+    const res = await fetch('/api/foods', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source: src || '自訂', name, calories: cal }) });
+    if (res.ok) {
+      const newFood = await res.json();
+      await loadAllFoods();
+      await addMealItem(date, meal, { food_item_id: newFood.id });
+    }
+    dd.style.display = 'none';
+  };
+
+  const searchInput = dd.querySelector('.fd-search');
+  searchInput.oninput = () => {
+    const q = searchInput.value.toLowerCase();
+    dd.querySelectorAll('.fd-item').forEach(item => {
+      const name = item.querySelector('.fd-name').textContent.toLowerCase();
+      item.style.display = name.includes(q) ? '' : 'none';
+    });
+  };
+
+  const closeDd = function(e) {
+    if (!dd.contains(e.target)) { dd.style.display = 'none'; document.removeEventListener('click', closeDd); }
+  };
+  setTimeout(() => document.addEventListener('click', closeDd), 10);
+}
+
+async function addMealItem(date, meal, item) {
+  const fd = (foodData.daily || []).find(function(x) { return x.date === date; });
+  const meals = fd ? (fd.meals || { breakfast: [], lunch: [], dinner: [] }) : { breakfast: [], lunch: [], dinner: [] };
+  const existing = meals[meal] || [];
+  const items = existing.map(function(i, idx) {
+    return {
+      food_item_id: i.food_item_id || null,
+      custom_name: i.custom_name || null,
+      custom_calories: i.custom_calories || null,
+      sort_order: idx,
+    };
+  });
+  items.push({ ...item, sort_order: items.length });
+  showSaving();
+  await fetch(`/api/food/daily/${date}/${meal}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items }) });
+  hideSaving();
+  loadMonth();
+}
+
+async function removeMealItem(date, meal, idx) {
+  const fd = (foodData.daily || []).find(function(x) { return x.date === date; });
+  const meals = fd ? (fd.meals || { breakfast: [], lunch: [], dinner: [] }) : { breakfast: [], lunch: [], dinner: [] };
+  const existing = meals[meal] || [];
+  existing.splice(idx, 1);
+  const items = existing.map(function(i, iIdx) {
+    return {
+      food_item_id: i.food_item_id || null,
+      custom_name: i.custom_name || null,
+      custom_calories: i.custom_calories || null,
+      sort_order: iIdx,
+    };
+  });
+  showSaving();
+  await fetch(`/api/food/daily/${date}/${meal}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items }) });
+  hideSaving();
+  loadMonth();
+}
+
+// ===================== BMR EDIT MODAL =====================
+
+function showBmrEditModal() {
+  var overlay = document.getElementById('modalOverlay');
+  overlay.innerHTML = '<div class="modal"><h3>修改基礎代謝率</h3>' +
+    '<label>新的基礎代謝率 (kcal)</label><input id="mBmrVal" type="number" value="' + bmrDefault + '">' +
+    '<p style="font-size:10pt;color:#888;margin-bottom:10px;">修改後，當前月份往後的所有週數將同步更新，之前的週數不受影響。</p>' +
+    '<div class="modal-btns"><button class="btn-cancel" id="mBmrCancel">取消</button><button class="btn-save" id="mBmrSave">套用</button></div></div>';
+  overlay.style.display = 'flex';
+  document.getElementById('mBmrCancel').onclick = function() { overlay.style.display = 'none'; };
+  document.getElementById('mBmrSave').onclick = async function() {
+    var newVal = parseFloat(document.getElementById('mBmrVal').value);
+    if (!newVal) return;
+    bmrDefault = newVal;
+    document.getElementById('bmrDefaultVal').textContent = newVal;
+    await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: 'bmr_default', value: String(newVal) })
+    });
+    var today = new Date();
+    var cascadeDate = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+    await fetch('/api/food/bmr-cascade/' + cascadeDate, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bmr: newVal })
+    });
+    overlay.style.display = 'none';
+    loadMonth();
+  };
+}
+
+async function saveDeficitStartDate() {
+  deficitStartDate = document.getElementById('deficitStartDate').value;
+  if (!deficitStartDate) return;
+  await fetch('/api/settings', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ key: 'deficit_start_date', value: deficitStartDate })
+  });
+  renderFoodStats();
+}
+
+// ===================== ADD FOOD MODAL =====================
+
+function showAddFoodModal() {
+  const overlay = document.getElementById('modalOverlay');
+  const sources = [...new Set(allFoods.map(f => f.source))];
+  const srcOpts = sources.map(s => `<option value="${s}">${s}</option>`).join('');
+  overlay.innerHTML = `<div class="modal"><h3>新增食物</h3>
+    <label>來源/品牌</label><input id="mFoodSrc" list="mFoodSrcList" placeholder="自煮、便當、品牌..."><datalist id="mFoodSrcList">${srcOpts}</datalist>
+    <label>食物名稱</label><input id="mFoodName">
+    <label>熱量 (kcal)</label><input id="mFoodCal" type="number">
+    <label>蛋白質 (g) (選填)</label><input id="mFoodProtein" type="number">
+    <div class="modal-btns"><button class="btn-cancel" id="mCancel">取消</button><button class="btn-save" id="mSave">儲存</button></div></div>`;
+  overlay.style.display = 'flex';
+  document.getElementById('mCancel').onclick = () => { overlay.style.display = 'none'; };
+  document.getElementById('mSave').onclick = async () => {
+    const src = document.getElementById('mFoodSrc').value.trim() || '自訂';
+    const name = document.getElementById('mFoodName').value.trim();
+    const cal = parseFloat(document.getElementById('mFoodCal').value);
+    const proteinVal = document.getElementById('mFoodProtein').value;
+    const protein = proteinVal ? parseFloat(proteinVal) : null;
+    if (!name || !cal) return;
+    await fetch('/api/foods', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source: src, name, calories: cal, protein }) });
+    overlay.style.display = 'none';
+    await loadAllFoods();
+  };
+}
+
+async function logout() {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  window.location.reload();
+}
+
+init();
+</script>
+</body>
+</html>

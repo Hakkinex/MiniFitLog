@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登入 - MiniFitLog</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #333f4f; display: flex; align-items: center; justify-content: center; min-height: 100vh; color: #263241; }
+.login-box { background: white; padding: 32px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); width: min(360px, calc(100vw - 32px)); }
+.login-box h1 { font-size: 20px; margin-bottom: 8px; color: #333f4f; }
+.login-box p { font-size: 13px; line-height: 1.5; color: #617084; margin-bottom: 20px; }
+.login-box label { display: block; font-size: 13px; color: #415064; margin-bottom: 6px; }
+.login-box input { width: 100%; padding: 10px 12px; border: 1px solid #c9d1dc; border-radius: 4px; font-size: 14px; margin-bottom: 14px; }
+.login-box input:focus { outline: 2px solid #91a5bd; outline-offset: 1px; }
+.login-box button { width: 100%; padding: 10px; background: #333f4f; color: white; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; }
+.login-box button:hover { background: #5a6a7a; }
+.login-box button:disabled { opacity: .7; cursor: default; }
+.mode-switch { margin-top: 16px; background: transparent !important; color: #333f4f !important; border: 1px solid #c9d1dc !important; }
+.error { color: #dc3545; font-size: 13px; margin-top: 10px; display: none; }
+</style>
+</head>
+<body>
+<div class="login-box">
+  <h1>MiniFitLog</h1>
+  <p id="modeHelp">請先註冊使用者，之後即可使用 email 與密碼登入。</p>
+  <label for="email">Email</label>
+  <input type="email" id="email" autocomplete="email" placeholder="you@example.com" autofocus>
+  <label for="password">密碼</label>
+  <input type="password" id="password" autocomplete="current-password" placeholder="至少 8 個字元">
+  <button id="submitBtn">註冊並登入</button>
+  <button class="mode-switch" id="modeSwitch" type="button">已有帳號，改用登入</button>
+  <div class="error" id="errorMsg"></div>
+</div>
+<script>
+let mode = 'register';
+
+const emailEl = document.getElementById('email');
+const passwordEl = document.getElementById('password');
+const submitBtn = document.getElementById('submitBtn');
+const switchBtn = document.getElementById('modeSwitch');
+const helpEl = document.getElementById('modeHelp');
+const errorEl = document.getElementById('errorMsg');
+
+function setMode(nextMode) {
+  mode = nextMode;
+  errorEl.style.display = 'none';
+  if (mode === 'login') {
+    helpEl.textContent = '使用註冊時的 email 與密碼登入。';
+    submitBtn.textContent = '登入';
+    switchBtn.textContent = '需要新帳號，改用註冊';
+    passwordEl.autocomplete = 'current-password';
+  } else {
+    helpEl.textContent = '請先註冊使用者，之後即可使用 email 與密碼登入。';
+    submitBtn.textContent = '註冊並登入';
+    switchBtn.textContent = '已有帳號，改用登入';
+    passwordEl.autocomplete = 'new-password';
+  }
+}
+
+function showError(message) {
+  errorEl.textContent = message;
+  errorEl.style.display = 'block';
+}
+
+async function loadStatus() {
+  const res = await fetch('/api/auth/status');
+  if (!res.ok) return;
+  const status = await res.json();
+  if (status.authenticated) {
+    window.location.href = '/';
+    return;
+  }
+  setMode(status.hasUsers ? 'login' : 'register');
+}
+
+async function submitAuth() {
+  const email = emailEl.value.trim();
+  const password = passwordEl.value;
+  if (!email || !password) {
+    showError('請輸入 email 與密碼');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  errorEl.style.display = 'none';
+  const endpoint = mode === 'login' ? '/api/auth/login' : '/api/auth/register';
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  submitBtn.disabled = false;
+
+  if (res.ok) {
+    window.location.href = '/';
+    return;
+  }
+
+  const body = await res.json().catch(() => ({}));
+  showError(body.error || '登入失敗');
+}
+
+submitBtn.onclick = submitAuth;
+switchBtn.onclick = () => setMode(mode === 'login' ? 'register' : 'login');
+[emailEl, passwordEl].forEach((el) => {
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitAuth();
+  });
+});
+
+loadStatus();
+</script>
+</body>
+</html>

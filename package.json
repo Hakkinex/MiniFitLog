@@ -1,0 +1,31 @@
+{
+  "name": "minifitlog",
+  "version": "1.0.0",
+  "description": "MiniFitLog — self-hosted fitness and meal tracking web app",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "vitest run",
+    "lint": "eslint src/",
+    "db:migrate": "tsx src/db/migrate.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@11.7.0",
+  "dependencies": {
+    "@fastify/cookie": "^11.0.2",
+    "better-sqlite3": "^12.11.1",
+    "fastify": "^5.8.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.9.3",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
+}
