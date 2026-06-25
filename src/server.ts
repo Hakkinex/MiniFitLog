@@ -23,7 +23,7 @@ async function main() {
   const trainingService = createTrainingService(db)
   const foodService = createFoodService(db)
 
-  await fastify.register(authMiddleware, authService)
+  await authMiddleware(fastify, authService)
   await fastify.register(trainingRoutes, trainingService)
   await fastify.register(foodRoutes, foodService)
 
