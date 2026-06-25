@@ -51,5 +51,11 @@ export const dateParamsSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 })
 
+export const trainingImportSchema = z.object({
+  metrics: z.array(weeklyMetricsSchema).max(366),
+  records: z.array(dailyRecordSchema).max(366),
+})
+
 export type WeeklyMetricsInput = z.infer<typeof weeklyMetricsSchema>
 export type DailyRecordInput = z.infer<typeof dailyRecordSchema>
+export type TrainingImportInput = z.infer<typeof trainingImportSchema>

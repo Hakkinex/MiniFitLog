@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { foodItemSchema, mealSaveSchema, weeklyBmrSchema, dateMealParamsSchema, foodIdParamsSchema } from '../schemas/food.js'
+import { foodItemSchema, mealSaveSchema, weeklyBmrSchema, dateMealParamsSchema, foodIdParamsSchema, foodSearchQuerySchema, settingKeyParamsSchema } from '../schemas/food.js'
 import { bmrCascadeSchema, settingsUpdateSchema } from '../schemas/settings.js'
 import { dateParamsSchema, yearMonthParamsSchema } from '../schemas/training.js'
 import type { FoodService } from '../services/food.js'
@@ -18,8 +18,11 @@ export async function foodRoutes(fastify: FastifyInstance, service: FoodService)
   })
 
   fastify.get('/api/foods/search', async (request: FastifyRequest, reply: FastifyReply) => {
-    const q = (request.query as any).q || ''
-    return service.searchFoods(getUserId(request), q)
+    const parsed = foodSearchQuerySchema.safeParse(request.query)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Invalid query', details: parsed.error.issues })
+    }
+    return service.searchFoods(getUserId(request), parsed.data.q)
   })
 
   fastify.post('/api/foods', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -115,9 +118,12 @@ export async function foodRoutes(fastify: FastifyInstance, service: FoodService)
   })
 
   fastify.get('/api/settings/:key', async (request: FastifyRequest, reply: FastifyReply) => {
-    const key = (request.params as any).key
-    const value = service.getSetting(getUserId(request), key)
-    return { key, value }
+    const parsed = settingKeyParamsSchema.safeParse(request.params)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Invalid key', details: parsed.error.issues })
+    }
+    const value = service.getSetting(getUserId(request), parsed.data.key)
+    return { key: parsed.data.key, value }
   })
 
   fastify.put('/api/settings', async (request: FastifyRequest, reply: FastifyReply) => {

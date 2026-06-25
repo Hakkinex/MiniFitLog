@@ -1,5 +1,6 @@
 import Fastify from 'fastify'
 import cookie from '@fastify/cookie'
+import rateLimit from '@fastify/rate-limit'
 import { runMigrations } from './db/migrate.js'
 import { createAuthService } from './services/auth.js'
 import { createTrainingService } from './services/training.js'
@@ -17,6 +18,14 @@ async function main() {
   const fastify = Fastify({ logger: true })
 
   await fastify.register(cookie)
+  await fastify.register(rateLimit, {
+    global: false,
+    errorResponseBuilder: () => ({
+      statusCode: 429,
+      error: 'Too Many Requests',
+      message: 'Too many requests. Please try again later.',
+    }),
+  })
 
   const db = runMigrations()
   const authService = createAuthService(db)

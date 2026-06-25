@@ -36,6 +36,14 @@ export const foodIdParamsSchema = z.object({
   id: z.string().regex(/^\d+$/).transform(Number),
 })
 
+export const foodSearchQuerySchema = z.object({
+  q: z.string().trim().max(100).default(''),
+})
+
+export const settingKeyParamsSchema = z.object({
+  key: z.string().trim().min(1).max(100).regex(/^[A-Za-z0-9_-]+$/),
+})
+
 export type FoodItemInput = z.infer<typeof foodItemSchema>
 export type MealRecordItemInput = z.infer<typeof mealRecordItemSchema>
 export type MealSaveInput = z.infer<typeof mealSaveSchema>

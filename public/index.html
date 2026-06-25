@@ -249,6 +249,19 @@ let activeTab = 'training';
 let bmrDefault = 10283;
 let deficitStartDate = '';
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+function escapeAttr(value) {
+  return escapeHtml(value ?? '');
+}
+
 function init() {
   const now = new Date();
   currentYear = now.getFullYear();
@@ -349,11 +362,11 @@ function renderFoodList() {
   for (const [src, items] of Object.entries(groups)) {
     const g = document.createElement('div');
     g.className = 'food-group';
-    g.innerHTML = `<div class="food-group-header">${src}</div>`;
+    g.innerHTML = `<div class="food-group-header">${escapeHtml(src)}</div>`;
     items.forEach(f => {
       const row = document.createElement('div');
       row.className = 'food-item';
-      row.innerHTML = `<span>${f.name} (${f.calories})</span><span class="fi-del" data-fid="${f.id}">&times;</span>`;
+      row.innerHTML = `<span>${escapeHtml(f.name)} (${escapeHtml(f.calories)})</span><span class="fi-del" data-fid="${f.id}">&times;</span>`;
       g.appendChild(row);
     });
     list.appendChild(g);
@@ -540,9 +553,9 @@ function buildWeeklyInputsHTML(date, wm) {
   const bf = wm ? (wm.body_fat || '') : '';
   const wt = wm ? (wm.weight || '') : '';
   const ws = wm ? (wm.waist || '') : '';
-  return `<label>體脂肪%<input type="number" step="0.1" value="${bf}" data-wm-date="${date}" data-wm-field="body_fat"></label>` +
-    `<label>體重kg<input type="number" step="0.1" value="${wt}" data-wm-date="${date}" data-wm-field="weight"></label>` +
-    `<label>腰圍cm<input type="number" step="0.1" value="${ws}" data-wm-date="${date}" data-wm-field="waist"></label>`;
+  return `<label>體脂肪%<input type="number" step="0.1" value="${escapeAttr(bf)}" data-wm-date="${date}" data-wm-field="body_fat"></label>` +
+    `<label>體重kg<input type="number" step="0.1" value="${escapeAttr(wt)}" data-wm-date="${date}" data-wm-field="weight"></label>` +
+    `<label>腰圍cm<input type="number" step="0.1" value="${escapeAttr(ws)}" data-wm-date="${date}" data-wm-field="waist"></label>`;
 }
 
 function buildTrainingDayHTML(dayNum, date, dow, rec) {
@@ -560,23 +573,23 @@ function buildTrainingDayHTML(dayNum, date, dow, rec) {
   html += `<div class="row"><span class="cardio-label">有氧</span>`;
   html += `<select data-date="${date}" data-field="cardio_done"><option value=""></option><option value="1" ${cd==='Y'?'selected':''}>Y</option><option value="0" ${cd==='N'?'selected':''}>N</option></select>`;
   html += `<select class="type-select" data-date="${date}" data-field="exercise_type">${buildOptions(EXERCISE_TYPES, et)}</select>`;
-  if (et === '其他') html += `<input class="custom-input" data-date="${date}" data-field="exercise_custom" value="${ec}" placeholder="自訂">`;
+  if (et === '其他') html += `<input class="custom-input" data-date="${date}" data-field="exercise_custom" value="${escapeAttr(ec)}" placeholder="自訂">`;
   html += `</div>`;
   html += `<div class="row"><label>心跳</label><input type="number" data-date="${date}" data-field="cardio_heartbeat" value="${ch}" min="0" max="300"></div>`;
   html += `<div class="row"><span class="plank-label">捲腹</span>`;
   html += `<select data-date="${date}" data-field="plank_done"><option value=""></option><option value="1" ${pd==='Y'?'selected':''}>Y</option><option value="0" ${pd==='N'?'selected':''}>N</option></select>`;
   html += `<select class="type-select" data-date="${date}" data-field="plank_type">${buildOptions(PLANK_TYPES, pt)}</select>`;
-  if (pt === '其他') html += `<input class="custom-input" data-date="${date}" data-field="plank_custom" value="${pc}" placeholder="自訂">`;
+  if (pt === '其他') html += `<input class="custom-input" data-date="${date}" data-field="plank_custom" value="${escapeAttr(pc)}" placeholder="自訂">`;
   html += `</div>`;
   html += `<div class="row"><label>心跳</label><input type="number" data-date="${date}" data-field="plank_heartbeat" value="${ph}" min="0" max="300"></div>`;
-  html += `<input class="note-input" data-date="${date}" data-field="note" value="${note}" placeholder="備註">`;
+  html += `<input class="note-input" data-date="${date}" data-field="note" value="${escapeAttr(note)}" placeholder="備註">`;
   html += `</div>`;
   return html;
 }
 
 function buildOptions(types, selected) {
   let opts = '<option value=""></option>';
-  types.forEach(t => { opts += `<option value="${t}" ${t===selected?'selected':''}>${t}</option>`; });
+  types.forEach(t => { opts += `<option value="${escapeAttr(t)}" ${t===selected?'selected':''}>${escapeHtml(t)}</option>`; });
   return opts;
 }
 
@@ -700,7 +713,7 @@ function buildFoodDayHTML(dayNum, date, dow, fd) {
     items.forEach(function(item, idx) {
       const name = (item.food && item.food.name) || item.custom_name || '?';
       const cal = (item.food && item.food.calories) || item.custom_calories || 0;
-      html += `<div class="meal-item-row"><span class="mi-name">${name}</span><span class="mi-cal">${cal}</span><span class="mi-del" data-mi-date="${date}" data-mi-meal="${mt}" data-mi-idx="${idx}">&times;</span></div>`;
+      html += `<div class="meal-item-row"><span class="mi-name">${escapeHtml(name)}</span><span class="mi-cal">${escapeHtml(cal)}</span><span class="mi-del" data-mi-date="${date}" data-mi-meal="${mt}" data-mi-idx="${idx}">&times;</span></div>`;
     });
     html += `</div>`;
     const mealCal = mt === 'breakfast' ? bc : mt === 'lunch' ? lc : dc;
@@ -780,9 +793,9 @@ function showFoodDropdown(btn, date, meal) {
   const groups = {};
   allFoods.forEach(function(f) { if (!groups[f.source]) groups[f.source] = []; groups[f.source].push(f); });
   for (const [src, items] of Object.entries(groups)) {
-    html += `<div class="fd-group"><div class="fd-group-header">${src}</div>`;
+    html += `<div class="fd-group"><div class="fd-group-header">${escapeHtml(src)}</div>`;
     items.forEach(f => {
-      html += `<div class="fd-item" data-fi-id="${f.id}" data-fi-cal="${f.calories}"><span class="fd-name">${f.name}</span><span class="fd-cal">${f.calories} kcal</span></div>`;
+      html += `<div class="fd-item" data-fi-id="${f.id}" data-fi-cal="${f.calories}"><span class="fd-name">${escapeHtml(f.name)}</span><span class="fd-cal">${escapeHtml(f.calories)} kcal</span></div>`;
     });
     html += `</div>`;
   }
@@ -913,7 +926,7 @@ async function saveDeficitStartDate() {
 function showAddFoodModal() {
   const overlay = document.getElementById('modalOverlay');
   const sources = [...new Set(allFoods.map(f => f.source))];
-  const srcOpts = sources.map(s => `<option value="${s}">${s}</option>`).join('');
+  const srcOpts = sources.map(s => `<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`).join('');
   overlay.innerHTML = `<div class="modal"><h3>新增食物</h3>
     <label>來源/品牌</label><input id="mFoodSrc" list="mFoodSrcList" placeholder="自煮、便當、品牌..."><datalist id="mFoodSrcList">${srcOpts}</datalist>
     <label>食物名稱</label><input id="mFoodName">

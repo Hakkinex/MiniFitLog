@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { weeklyMetricsSchema, dailyRecordSchema, yearMonthParamsSchema, dateParamsSchema } from '../schemas/training.js'
+import { weeklyMetricsSchema, dailyRecordSchema, yearMonthParamsSchema, dateParamsSchema, trainingImportSchema } from '../schemas/training.js'
 import type { TrainingService } from '../services/training.js'
 
 function getUserId(request: FastifyRequest): number {
@@ -47,11 +47,11 @@ export async function trainingRoutes(fastify: FastifyInstance, service: Training
   })
 
   fastify.post('/api/import', async (request: FastifyRequest, reply: FastifyReply) => {
-    const body = request.body as any
-    if (!body || !Array.isArray(body.metrics) || !Array.isArray(body.records)) {
-      return reply.status(400).send({ error: 'Expected { metrics: [], records: [] }' })
+    const parsed = trainingImportSchema.safeParse(request.body)
+    if (!parsed.success) {
+      return reply.status(400).send({ error: 'Invalid body', details: parsed.error.issues })
     }
-    const result = service.importData(getUserId(request), body.metrics, body.records)
+    const result = service.importData(getUserId(request), parsed.data.metrics, parsed.data.records)
     if (result.ok) return result.value
     return reply.status(result.error.status).send({ error: result.error.message })
   })

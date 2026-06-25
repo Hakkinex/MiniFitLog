@@ -5,13 +5,18 @@ import type { AuthService } from '../services/auth.js'
 const COOKIE_NAME = 'auth_token'
 const COOKIE_MAX_AGE = 86400 * 30
 
-function setAuthCookie(reply: FastifyReply, token: string) {
-  reply.setCookie(COOKIE_NAME, token, {
+function authCookieOptions() {
+  return {
     path: '/',
     httpOnly: true,
-    sameSite: 'strict',
+    sameSite: 'strict' as const,
+    secure: 'auto' as const,
     maxAge: COOKIE_MAX_AGE,
-  })
+  }
+}
+
+function setAuthCookie(reply: FastifyReply, token: string) {
+  reply.setCookie(COOKIE_NAME, token, authCookieOptions())
 }
 
 export async function authMiddleware(fastify: FastifyInstance, service: AuthService) {
@@ -43,7 +48,14 @@ export async function authMiddleware(fastify: FastifyInstance, service: AuthServ
     }
   })
 
-  fastify.post('/api/auth/register', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/api/auth/register', {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: '15 minutes',
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     const parsed = authCredentialsSchema.safeParse(request.body)
     if (!parsed.success) {
       return reply.status(400).send({ error: 'Invalid body', details: parsed.error.issues })
@@ -58,7 +70,14 @@ export async function authMiddleware(fastify: FastifyInstance, service: AuthServ
     return { ok: true, user: result.value.user }
   })
 
-  fastify.post('/api/auth/login', async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/api/auth/login', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '15 minutes',
+      },
+    },
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     const parsed = authCredentialsSchema.safeParse(request.body)
     if (!parsed.success) {
       return reply.status(400).send({ error: 'Invalid body', details: parsed.error.issues })
@@ -76,7 +95,7 @@ export async function authMiddleware(fastify: FastifyInstance, service: AuthServ
   fastify.post('/api/auth/logout', async (request: FastifyRequest, reply: FastifyReply) => {
     const token = request.cookies?.[COOKIE_NAME]
     if (token) service.logout(token)
-    reply.clearCookie(COOKIE_NAME, { path: '/' })
+    reply.clearCookie(COOKIE_NAME, authCookieOptions())
     return { ok: true }
   })
 }
